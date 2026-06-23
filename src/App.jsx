@@ -166,13 +166,20 @@ for epoch in range(100):
             Load Sample Code
           </button>
 
-          <button
-            onClick={analyzeCode}
-            disabled={loading}
-            className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 text-white font-bold py-2 px-6 rounded-xl transition"
-          >
-            {loading ? "Analyzing..." : "🔍 Analyze Bottlenecks"}
-          </button>
+         <button
+  onClick={analyzeCode}
+  disabled={loading}
+  className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-900 text-white font-bold py-2 px-6 rounded-xl transition"
+>
+  {loading ? "Analyzing..." : "🔍 Analyze Bottlenecks"}
+</button>
+
+<button
+  onClick={() => { setCode(""); setResult(null); }}
+  className="bg-red-700 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-xl transition"
+>
+  🗑️ Clear
+</button>
         </div>
 
         {result && <Dashboard result={result} />}
