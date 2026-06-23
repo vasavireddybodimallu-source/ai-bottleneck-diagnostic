@@ -106,8 +106,88 @@ function analyzeLocally(code) {
 
 function App() {
   const [code, setCode] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+const [result, setResult] = useState(null);
+const [loading, setLoading] = useState(false);
+const [sampleIndex, setSampleIndex] = useState(0);
+
+const samples = [
+  `# Sample 1: DataLoader issues
+import torch
+from torch.utils.data import DataLoader
+
+loader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
+model = HugeModel()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+
+for epoch in range(100):
+    for batch in loader:
+        output = model(batch)
+        loss = criterion(output, batch)
+        loss.backward()
+        optimizer.step()
+    torch.save(model.state_dict(), "model.pt")`,
+
+  `# Sample 2: Memory & CPU issues
+import torch
+import torch.nn as nn
+
+model = nn.Sequential(
+    nn.Linear(1024, 4096),
+    nn.ReLU(),
+    nn.Linear(4096, 4096),
+    nn.ReLU(),
+    nn.Linear(4096, 10)
+)
+
+for epoch in range(50):
+    for batch in dataloader:
+        output = model(batch)
+        output = output.cpu()
+        loss = criterion(output, labels.cpu())
+        loss.backward()
+        optimizer.step()`,
+
+  `# Sample 3: Preprocessing bottleneck
+import torch
+import time
+from torch.utils.data import Dataset
+
+class SlowDataset(Dataset):
+    def __getitem__(self, idx):
+        time.sleep(0.01)
+        img = load_image(idx)
+        img = heavy_augmentation(img)
+        return img
+
+loader = DataLoader(SlowDataset(), batch_size=32, num_workers=0)
+for batch in loader:
+    output = model(batch)
+    loss = criterion(output, labels)
+    loss.backward()
+    optimizer.step()
+    optimizer.zero_grad()`,
+
+  `# Sample 4: TensorFlow bottlenecks
+import tensorflow as tf
+
+dataset = tf.data.Dataset.from_tensor_slices(data)
+dataset = dataset.batch(1)
+
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(4096, activation='relu'),
+    tf.keras.layers.Dense(4096, activation='relu'),
+    tf.keras.layers.Dense(10)
+])
+
+for epoch in range(100):
+    for batch in dataset:
+        with tf.GradientTape() as tape:
+            output = model(batch, training=True)
+            loss = loss_fn(labels, output)
+        grads = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))
+        tf.saved_model.save(model, "saved_model")`,
+];
 
   const analyzeCode = async () => {
     if (!code.trim()) return;
@@ -142,29 +222,14 @@ function App() {
 
         <div className="mb-4 flex gap-3">
           <button
-            onClick={() => setCode(`import torch
-from torch.utils.data import DataLoader
-
-dataset = LargeDataset()
-loader = DataLoader(dataset, batch_size=1, num_workers=0, shuffle=True)
-
-model = HugeModel()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
-criterion = torch.nn.MSELoss()
-
-for epoch in range(100):
-    for batch in loader:
-        import time
-        time.sleep(0.001)
-        output = model(batch)
-        loss = criterion(output, batch)
-        loss.backward()
-        optimizer.step()
-    torch.save(model.state_dict(), "model.pt")`)}
-            className="text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-gray-300"
-          >
-            Load Sample Code
-          </button>
+  onClick={() => {
+    setCode(samples[sampleIndex]);
+    setSampleIndex((sampleIndex + 1) % samples.length);
+  }}
+  className="text-sm bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-gray-300"
+>
+  Load Sample ({sampleIndex + 1}/{samples.length})
+</button>
 
          <button
   onClick={analyzeCode}
